@@ -362,6 +362,11 @@ main {
   color: var(--success);
 }
 
+.tag.local {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-muted);
+}
+
 .evento-actions {
   position: absolute;
   top: 0.75rem;
