@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Agenda de eventos gratuitos – organizada por data e hora. Cultura, música, teatro e mais, sem gastar um cêntimo.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Agenda Grátis · Eventos Culturais</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Background pattern subtil -->
+  <div class="bg-pattern" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-area">
+        <span class="logo-icon" aria-hidden="true">✦</span>
+        <div>
+          <h1>Agenda Grátis</h1>
+          <p class="tagline">Eventos culturais · zero euros · zero desculpas</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-notif" class="btn btn-ghost" type="button" title="Ativar notificações">
+          <span class="icon">🔔</span>
+          <span class="btn-text">Notificações</span>
+        </button>
+        <button id="btn-add" class="btn btn-primary" type="button">
+          <span class="icon">＋</span>
+          <span class="btn-text">Adicionar</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Filtros rápidos -->
+    <section class="filters" aria-label="Filtros">
+      <div class="filter-group">
+        <button class="chip active" data-filter="all">Todos</button>
+        <button class="chip" data-filter="hoje">Hoje</button>
+        <button class="chip" data-filter="semana">Esta semana</button>
+        <button class="chip" data-filter="proximos">Próximos 30 dias</button>
+      </div>
+      <div class="search-wrap">
+        <input type="search" id="search" placeholder="Pesquisar evento, local ou categoria…" aria-label="Pesquisar eventos">
+      </div>
+    </section>
+
+    <!-- Lista de eventos -->
+    <section id="eventos" class="eventos-lista" aria-live="polite">
+      <!-- Preenchido por JS -->
+    </section>
+
+    <p id="empty-state" class="empty-state hidden">
+      Nada por aqui. Ou o mundo acabou, ou ainda não adicionaste eventos.<br>
+      Clica em <strong>Adicionar</strong> e começa a preencher esta agenda.
+    </p>
+  </main>
+
+  <!-- Modal de adicionar / editar -->
+  <dialog id="modal-add" class="modal">
+    <form id="form-evento" method="dialog">
+      <header class="modal-header">
+        <h2 id="modal-title">Novo evento</h2>
+        <button type="button" class="btn-close" id="btn-close-modal" aria-label="Fechar">×</button>
+      </header>
+
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="titulo">Nome do evento *</label>
+            <input type="text" id="titulo" name="titulo" required maxlength="120" placeholder="Ex: Concerto de jazz no jardim">
+          </div>
+
+          <div class="field">
+            <label for="data">Data *</label>
+            <input type="date" id="data" name="data" required>
+          </div>
+
+          <div class="field">
+            <label for="hora">Hora *</label>
+            <input type="time" id="hora" name="hora" required>
+          </div>
+
+          <div class="field full">
+            <label for="local">Local *</label>
+            <input type="text" id="local" name="local" required maxlength="100" placeholder="Ex: Jardim da Estrela, Lisboa">
+          </div>
+
+          <div class="field full">
+            <label for="maps">Link Google Maps</label>
+            <input type="url" id="maps" name="maps" placeholder="https://maps.google.com/...">
+          </div>
+
+          <div class="field">
+            <label for="categoria">Categoria</label>
+            <select id="categoria" name="categoria">
+              <option value="Música">Música</option>
+              <option value="Teatro">Teatro</option>
+              <option value="Cinema">Cinema</option>
+              <option value="Exposição">Exposição</option>
+              <option value="Literatura">Literatura</option>
+              <option value="Dança">Dança</option>
+              <option value="Workshops">Workshops</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="preco">Preço</label>
+            <input type="text" id="preco" name="preco" value="Gratuito" maxlength="40">
+          </div>
+
+          <div class="field full">
+            <label for="descricao">Descrição / notas úteis</label>
+            <textarea id="descricao" name="descricao" rows="3" maxlength="500" placeholder="Horário de abertura, o que levar, restrições, etc."></textarea>
+          </div>
+
+          <div class="field full">
+            <label for="organizador">Organizador / contacto</label>
+            <input type="text" id="organizador" name="organizador" maxlength="80" placeholder="Opcional">
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-cancel">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar evento</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Export helper (escondido) -->
+  <div class="export-bar hidden" id="export-bar">
+    <p>Tens eventos locais. Queres exportar o JSON para fazer commit no GitHub?</p>
+    <button id="btn-export" class="btn btn-primary">Exportar JSON</button>
+  </div>
+
+  <footer class="site-footer">
+    <p>Feito com café e desprezo por eventos pagos · <a href="https://github.com" target="_blank" rel="noopener">Código aberto no GitHub</a></p>
+    <p class="small">Os eventos adicionados ficam no teu browser (localStorage). Para partilhar com o mundo, exporta o JSON e faz commit.</p>
+  </footer>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>
