@@ -67,8 +67,8 @@
     </section>
 
     <p id="empty-state" class="empty-state hidden">
-      Nada por aqui. Ou o mundo acabou, ou ainda não adicionaste eventos.<br>
-      Clica em <strong>Adicionar</strong> e começa a preencher esta agenda.
+      Nada por aqui. Ou o mundo acabou, ou o <code>eventos.json</code> está vazio.<br>
+      Clica em <strong>Adicionar</strong> para pré-visualizar (só no teu browser) ou edita o ficheiro no GitHub.
     </p>
   </main>
 
@@ -150,13 +150,13 @@
 
   <!-- Export helper (escondido) -->
   <div class="export-bar hidden" id="export-bar">
-    <p>Tens eventos locais. Queres exportar o JSON para fazer commit no GitHub?</p>
-    <button id="btn-export" class="btn btn-primary">Exportar JSON</button>
+    <p>Tens eventos só no teu browser. Exporta o JSON, substitui o <code>eventos.json</code> no repositório e faz commit para toda a gente ver.</p>
+    <button id="btn-export" class="btn btn-primary">Exportar eventos.json</button>
   </div>
 
   <footer class="site-footer">
     <p>Feito com café e desprezo por eventos pagos · <a href="https://github.com" target="_blank" rel="noopener">Código aberto no GitHub</a></p>
-    <p class="small">Os eventos adicionados ficam no teu browser (localStorage). Para partilhar com o mundo, exporta o JSON e faz commit.</p>
+    <p class="small">A lista oficial vem do ficheiro <code>eventos.json</code> no repositório (visível para todos). O que adicionas aqui fica só no teu browser até fazeres commit.</p>
   </footer>
 
   <script src="js/app.js" type="module"></script>

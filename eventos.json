@@ -1,0 +1,38 @@
+[
+  {
+    "id": "demo-1",
+    "titulo": "Concerto ao ar livre – Jazz no Jardim",
+    "data": "2026-10-12",
+    "hora": "19:30",
+    "local": "Jardim da Estrela, Lisboa",
+    "maps": "https://maps.google.com/?q=Jardim+da+Estrela+Lisboa",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "Entrada livre. Levar manta ou cadeira. Em caso de chuva passa para o dia seguinte.",
+    "organizador": "Câmara Municipal de Lisboa"
+  },
+  {
+    "id": "demo-2",
+    "titulo": "Exposição: Luz e Sombra – Fotografia Contemporânea",
+    "data": "2026-10-15",
+    "hora": "10:00",
+    "local": "Museu de Arte Contemporânea, Porto",
+    "maps": "https://maps.google.com/?q=Museu+de+Arte+Contemporanea+Porto",
+    "categoria": "Exposição",
+    "preco": "Gratuito",
+    "descricao": "Aberto de terça a domingo. Visitas guiadas às 15h (mediante inscrição).",
+    "organizador": "Fundação Serralves"
+  },
+  {
+    "id": "demo-3",
+    "titulo": "Sessão de cinema ao ar livre – Clássicos portugueses",
+    "data": "2026-10-10",
+    "hora": "21:00",
+    "local": "Parque Eduardo VII, Lisboa",
+    "maps": "https://maps.google.com/?q=Parque+Eduardo+VII+Lisboa",
+    "categoria": "Cinema",
+    "preco": "Gratuito",
+    "descricao": "Filme: “Os Verdes Anos”. Trazer pipocas e boa disposição.",
+    "organizador": "Cinemateca Portuguesa"
+  }
+]
