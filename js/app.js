@@ -1,14 +1,11 @@
 /**
- * Agenda Grátis – App principal
- * Fonte de verdade: eventos.json (partilhado no GitHub)
- * localStorage só para pré-visualização local
- * Ordenação por data/hora crescente · PWA notifications
+ * Eventos culturais gratuitos
+ * Fonte única: eventos.json
+ * Ao guardar → descarrega automaticamente o JSON atualizado para fazeres push
  */
 
-const STORAGE_KEY = 'agenda-gratis-locais';
 const EVENTOS_JSON = './eventos.json';
 
-// Helpers de data
 function getOffsetDate(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -20,17 +17,11 @@ function parseDateTime(evento) {
 }
 
 function formatDia(dataStr) {
-  const d = new Date(dataStr + 'T12:00:00');
-  return d.getDate();
+  return new Date(dataStr + 'T12:00:00').getDate();
 }
 
 function formatMes(dataStr) {
-  const d = new Date(dataStr + 'T12:00:00');
-  return d.toLocaleDateString('pt-PT', { month: 'short' }).toUpperCase();
-}
-
-function formatHora(hora) {
-  return hora || '—';
+  return new Date(dataStr + 'T12:00:00').toLocaleDateString('pt-PT', { month: 'short' }).toUpperCase();
 }
 
 function isHoje(dataStr) {
@@ -55,32 +46,25 @@ function isProximos30(dataStr) {
   return d >= hoje && d <= fim;
 }
 
-// Estado
-let eventosOficiais = [];   // vindos do eventos.json (partilhados)
-let eventosLocais = [];     // só no teu browser (pré-visualização)
+let eventos = [];
 let filtroAtual = 'all';
 let termoPesquisa = '';
 let editandoId = null;
 
-// DOM
 const $lista = document.getElementById('eventos');
 const $empty = document.getElementById('empty-state');
 const $modal = document.getElementById('modal-add');
 const $form = document.getElementById('form-evento');
 const $toast = document.getElementById('toast');
-const $exportBar = document.getElementById('export-bar');
 const $search = document.getElementById('search');
 const $btnAdd = document.getElementById('btn-add');
 const $btnNotif = document.getElementById('btn-notif');
 const $btnClose = document.getElementById('btn-close-modal');
 const $btnCancel = document.getElementById('btn-cancel');
-const $btnExport = document.getElementById('btn-export');
 const $modalTitle = document.getElementById('modal-title');
 
-// Inicialização
 async function init() {
-  await loadEventosOficiais();
-  loadEventosLocais();
+  await loadEventos();
   render();
   bindEvents();
   checkNotifPermission();
@@ -88,65 +72,29 @@ async function init() {
   scheduleLocalNotifications();
 }
 
-async function loadEventosOficiais() {
+async function loadEventos() {
   try {
-    const res = await fetch(EVENTOS_JSON + '?t=' + Date.now()); // evita cache agressivo
-    if (!res.ok) throw new Error('Falha ao carregar eventos.json');
-    eventosOficiais = await res.json();
-  } catch (err) {
-    console.warn('Não foi possível carregar eventos.json:', err);
-    eventosOficiais = [];
-    showToast('Não consegui carregar a lista oficial. A mostrar só os teus eventos locais.');
-  }
-}
-
-function loadEventosLocais() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    eventosLocais = raw ? JSON.parse(raw) : [];
+    const res = await fetch(EVENTOS_JSON + '?t=' + Date.now());
+    if (!res.ok) throw new Error('erro');
+    eventos = await res.json();
   } catch {
-    eventosLocais = [];
+    eventos = [];
   }
 }
 
-function saveEventosLocais() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(eventosLocais));
-  updateExportBar();
-}
-
-function updateExportBar() {
-  $exportBar.classList.toggle('hidden', eventosLocais.length === 0);
-}
-
-// Todos os eventos = oficiais + locais (sem duplicados por id)
-function getTodosEventos() {
-  const idsOficiais = new Set(eventosOficiais.map(e => e.id));
-  const locaisUnicos = eventosLocais.filter(e => !idsOficiais.has(e.id));
-  return [...eventosOficiais, ...locaisUnicos];
-}
-
-// Render
 function getEventosFiltrados() {
-  let lista = getTodosEventos();
+  let lista = [...eventos];
 
-  // Ordenar por data/hora crescente
   lista.sort((a, b) => parseDateTime(a) - parseDateTime(b));
 
-  // Remover eventos muito antigos (mais de 2 dias)
   const limite = new Date();
   limite.setDate(limite.getDate() - 2);
   lista = lista.filter(e => parseDateTime(e) >= limite);
 
-  // Filtro temporal
-  if (filtroAtual === 'hoje') {
-    lista = lista.filter(e => isHoje(e.data));
-  } else if (filtroAtual === 'semana') {
-    lista = lista.filter(e => isEstaSemana(e.data));
-  } else if (filtroAtual === 'proximos') {
-    lista = lista.filter(e => isProximos30(e.data));
-  }
+  if (filtroAtual === 'hoje') lista = lista.filter(e => isHoje(e.data));
+  else if (filtroAtual === 'semana') lista = lista.filter(e => isEstaSemana(e.data));
+  else if (filtroAtual === 'proximos') lista = lista.filter(e => isProximos30(e.data));
 
-  // Pesquisa
   if (termoPesquisa.trim()) {
     const t = termoPesquisa.toLowerCase();
     lista = lista.filter(e =>
@@ -170,26 +118,22 @@ function render() {
   }
   $empty.classList.add('hidden');
 
-  lista.forEach(evento => {
-    $lista.appendChild(criarCard(evento));
-  });
+  lista.forEach(e => $lista.appendChild(criarCard(e)));
 }
 
 function criarCard(e) {
   const card = document.createElement('article');
   card.className = 'evento-card';
-  card.dataset.id = e.id;
 
-  const isLocal = eventosLocais.some(l => l.id === e.id);
   const mapsHtml = e.maps
-    ? `<a href="${e.maps}" target="_blank" rel="noopener" title="Abrir no Google Maps">📍 ${escapeHtml(e.local)}</a>`
+    ? `<a href="${e.maps}" target="_blank" rel="noopener">📍 ${escapeHtml(e.local)}</a>`
     : `<span>📍 ${escapeHtml(e.local)}</span>`;
 
   card.innerHTML = `
     <div class="evento-data">
       <span class="dia">${formatDia(e.data)}</span>
       <span class="mes">${formatMes(e.data)}</span>
-      <span class="hora">${formatHora(e.hora)}</span>
+      <span class="hora">${e.hora || '—'}</span>
     </div>
     <div class="evento-info">
       <h3>${escapeHtml(e.titulo)}</h3>
@@ -202,38 +146,28 @@ function criarCard(e) {
       <div class="evento-tags">
         <span class="tag preco">${escapeHtml(e.preco || 'Gratuito')}</span>
         ${isHoje(e.data) ? '<span class="tag">Hoje</span>' : ''}
-        ${isLocal ? '<span class="tag local">Só no teu browser</span>' : ''}
       </div>
     </div>
     <div class="evento-actions">
-      ${isLocal ? `
-        <button class="btn-icon" data-action="edit" title="Editar">✏️</button>
-        <button class="btn-icon danger" data-action="delete" title="Apagar">🗑</button>
-      ` : ''}
+      <button class="btn-icon" data-action="edit" title="Editar">✏️</button>
+      <button class="btn-icon danger" data-action="delete" title="Apagar">🗑</button>
     </div>
   `;
 
-  if (isLocal) {
-    card.querySelector('[data-action="edit"]')?.addEventListener('click', () => abrirModal(e));
-    card.querySelector('[data-action="delete"]')?.addEventListener('click', () => apagarEventoLocal(e.id));
-  }
+  card.querySelector('[data-action="edit"]').addEventListener('click', () => abrirModal(e));
+  card.querySelector('[data-action="delete"]').addEventListener('click', () => apagarEvento(e.id));
 
   return card;
 }
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Modal
 function abrirModal(evento = null) {
   editandoId = evento ? evento.id : null;
-  $modalTitle.textContent = evento ? 'Editar evento (local)' : 'Novo evento (pré-visualização local)';
+  $modalTitle.textContent = evento ? 'Editar evento' : 'Novo evento';
 
   $form.titulo.value = evento?.titulo || '';
   $form.data.value = evento?.data || getOffsetDate(0);
@@ -272,60 +206,67 @@ function guardarEvento(e) {
   };
 
   if (editandoId) {
-    const idx = eventosLocais.findIndex(ev => ev.id === editandoId);
-    if (idx !== -1) eventosLocais[idx] = dados;
+    const idx = eventos.findIndex(ev => ev.id === editandoId);
+    if (idx !== -1) eventos[idx] = dados;
   } else {
-    eventosLocais.push(dados);
+    eventos.push(dados);
   }
 
-  saveEventosLocais();
+  // Descarrega automaticamente o JSON atualizado
+  descarregarJSON();
+
   render();
   fecharModal();
-  showToast('Evento guardado só no teu browser. Para partilhar com toda a gente, exporta o JSON e faz commit no GitHub.');
+  showToast('JSON descarregado. Substitui o eventos.json no GitHub e faz push.');
   scheduleLocalNotifications();
 }
 
-function apagarEventoLocal(id) {
-  if (!confirm('Apagar este evento local? (Os oficiais não são afetados)')) return;
-  eventosLocais = eventosLocais.filter(e => e.id !== id);
-  saveEventosLocais();
+function apagarEvento(id) {
+  if (!confirm('Apagar este evento?')) return;
+  eventos = eventos.filter(e => e.id !== id);
+  descarregarJSON();
   render();
-  showToast('Evento local apagado.');
+  showToast('JSON descarregado. Substitui o eventos.json no GitHub e faz push.');
 }
 
-// Toast
+function descarregarJSON() {
+  const dataStr = JSON.stringify(eventos, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'eventos.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function showToast(msg) {
   $toast.textContent = msg;
   $toast.classList.add('show');
-  setTimeout(() => $toast.classList.remove('show'), 4200);
+  setTimeout(() => $toast.classList.remove('show'), 4000);
 }
 
-// Notificações locais
 function checkNotifPermission() {
   if (!('Notification' in window)) {
     $btnNotif.style.display = 'none';
     return;
   }
   if (Notification.permission === 'granted') {
-    $btnNotif.querySelector('.btn-text').textContent = 'Ativas';
+    $btnNotif.title = 'Notificações ativas';
   }
 }
 
 async function pedirNotificacoes() {
-  if (!('Notification' in window)) {
-    showToast('O teu browser não suporta notificações.');
-    return;
-  }
+  if (!('Notification' in window)) return;
 
   if (Notification.permission === 'granted') {
-    showToast('Notificações já estão ativas.');
+    showToast('Notificações já ativas.');
     return;
   }
 
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
-    $btnNotif.querySelector('.btn-text').textContent = 'Ativas';
-    showToast('Notificações ativadas! Vais ser avisado dos próximos eventos.');
+    showToast('Notificações ativadas.');
     scheduleLocalNotifications();
   } else {
     showToast('Permissão negada.');
@@ -338,55 +279,34 @@ function scheduleLocalNotifications() {
   const agora = Date.now();
   const em24h = agora + 24 * 60 * 60 * 1000;
 
-  getTodosEventos().forEach(e => {
+  eventos.forEach(e => {
     const dt = parseDateTime(e).getTime();
-    const aviso = dt - 60 * 60 * 1000; // 1 hora antes
+    const aviso = dt - 60 * 60 * 1000;
 
     if (aviso > agora && aviso < em24h) {
-      const delay = aviso - agora;
       setTimeout(() => {
-        new Notification('Evento a começar em breve', {
+        new Notification('Evento em breve', {
           body: `${e.titulo} · ${e.hora} · ${e.local}`,
           icon: 'icons/icon-192.png',
           tag: e.id
         });
-      }, delay);
+      }, aviso - agora);
     }
   });
 }
 
-// Service Worker
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(() => console.log('SW registado'))
-      .catch(err => console.warn('SW falhou:', err));
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 }
 
-// Export JSON (para o dono do site fazer commit)
-function exportarJSON() {
-  // Junta oficiais + locais para facilitar o commit
-  const todos = getTodosEventos();
-  const dataStr = JSON.stringify(todos, null, 2);
-  const blob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'eventos.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('JSON exportado! Substitui o eventos.json no repositório e faz commit.');
-}
-
-// Event listeners
 function bindEvents() {
   $btnAdd.addEventListener('click', () => abrirModal());
   $btnClose.addEventListener('click', fecharModal);
   $btnCancel.addEventListener('click', fecharModal);
   $form.addEventListener('submit', guardarEvento);
   $btnNotif.addEventListener('click', pedirNotificacoes);
-  $btnExport.addEventListener('click', exportarJSON);
 
   $search.addEventListener('input', e => {
     termoPesquisa = e.target.value;
@@ -405,5 +325,4 @@ function bindEvents() {
   $modal.addEventListener('cancel', fecharModal);
 }
 
-// Arranque
 init();
