@@ -1,48 +1,12 @@
 /**
  * Agenda Grátis – App principal
- * Ordenação por data/hora crescente · localStorage · PWA notifications
- * Vanilla JS moderno (ES modules ready)
+ * Fonte de verdade: eventos.json (partilhado no GitHub)
+ * localStorage só para pré-visualização local
+ * Ordenação por data/hora crescente · PWA notifications
  */
 
-const STORAGE_KEY = 'agenda-gratis-eventos';
-const DEFAULT_EVENTS = [
-  {
-    id: 'demo-1',
-    titulo: 'Concerto ao ar livre – Jazz no Jardim',
-    data: getOffsetDate(2),
-    hora: '19:30',
-    local: 'Jardim da Estrela, Lisboa',
-    maps: 'https://maps.google.com/?q=Jardim+da+Estrela+Lisboa',
-    categoria: 'Música',
-    preco: 'Gratuito',
-    descricao: 'Entrada livre. Levar manta ou cadeira. Em caso de chuva passa para o dia seguinte.',
-    organizador: 'Câmara Municipal de Lisboa'
-  },
-  {
-    id: 'demo-2',
-    titulo: 'Exposição: Luz e Sombra – Fotografia Contemporânea',
-    data: getOffsetDate(5),
-    hora: '10:00',
-    local: 'Museu de Arte Contemporânea, Porto',
-    maps: 'https://maps.google.com/?q=Museu+de+Arte+Contemporanea+Porto',
-    categoria: 'Exposição',
-    preco: 'Gratuito',
-    descricao: 'Aberto de terça a domingo. Visitas guiadas às 15h (mediante inscrição).',
-    organizador: 'Fundação Serralves'
-  },
-  {
-    id: 'demo-3',
-    titulo: 'Sessão de cinema ao ar livre – Clássicos portugueses',
-    data: getOffsetDate(0),
-    hora: '21:00',
-    local: 'Parque Eduardo VII, Lisboa',
-    maps: 'https://maps.google.com/?q=Parque+Eduardo+VII+Lisboa',
-    categoria: 'Cinema',
-    preco: 'Gratuito',
-    descricao: 'Filme: “Os Verdes Anos”. Trazer pipocas e boa disposição.',
-    organizador: 'Cinemateca Portuguesa'
-  }
-];
+const STORAGE_KEY = 'agenda-gratis-locais';
+const EVENTOS_JSON = './eventos.json';
 
 // Helpers de data
 function getOffsetDate(days) {
@@ -92,7 +56,8 @@ function isProximos30(dataStr) {
 }
 
 // Estado
-let eventos = [];
+let eventosOficiais = [];   // vindos do eventos.json (partilhados)
+let eventosLocais = [];     // só no teu browser (pré-visualização)
 let filtroAtual = 'all';
 let termoPesquisa = '';
 let editandoId = null;
@@ -113,8 +78,9 @@ const $btnExport = document.getElementById('btn-export');
 const $modalTitle = document.getElementById('modal-title');
 
 // Inicialização
-function init() {
-  loadEventos();
+async function init() {
+  await loadEventosOficiais();
+  loadEventosLocais();
   render();
   bindEvents();
   checkNotifPermission();
@@ -122,40 +88,54 @@ function init() {
   scheduleLocalNotifications();
 }
 
-function loadEventos() {
+async function loadEventosOficiais() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      eventos = JSON.parse(raw);
-    } else {
-      eventos = [...DEFAULT_EVENTS];
-      saveEventos();
-    }
-  } catch {
-    eventos = [...DEFAULT_EVENTS];
+    const res = await fetch(EVENTOS_JSON + '?t=' + Date.now()); // evita cache agressivo
+    if (!res.ok) throw new Error('Falha ao carregar eventos.json');
+    eventosOficiais = await res.json();
+  } catch (err) {
+    console.warn('Não foi possível carregar eventos.json:', err);
+    eventosOficiais = [];
+    showToast('Não consegui carregar a lista oficial. A mostrar só os teus eventos locais.');
   }
-  // Remove eventos passados há mais de 2 dias (opcional)
-  const limite = new Date();
-  limite.setDate(limite.getDate() - 2);
-  eventos = eventos.filter(e => parseDateTime(e) >= limite);
 }
 
-function saveEventos() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(eventos));
+function loadEventosLocais() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    eventosLocais = raw ? JSON.parse(raw) : [];
+  } catch {
+    eventosLocais = [];
+  }
+}
+
+function saveEventosLocais() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(eventosLocais));
   updateExportBar();
 }
 
 function updateExportBar() {
-  const temLocais = eventos.some(e => !e.id.startsWith('demo-'));
-  $exportBar.classList.toggle('hidden', !temLocais);
+  $exportBar.classList.toggle('hidden', eventosLocais.length === 0);
+}
+
+// Todos os eventos = oficiais + locais (sem duplicados por id)
+function getTodosEventos() {
+  const idsOficiais = new Set(eventosOficiais.map(e => e.id));
+  const locaisUnicos = eventosLocais.filter(e => !idsOficiais.has(e.id));
+  return [...eventosOficiais, ...locaisUnicos];
 }
 
 // Render
 function getEventosFiltrados() {
-  let lista = [...eventos];
+  let lista = getTodosEventos();
 
   // Ordenar por data/hora crescente
   lista.sort((a, b) => parseDateTime(a) - parseDateTime(b));
+
+  // Remover eventos muito antigos (mais de 2 dias)
+  const limite = new Date();
+  limite.setDate(limite.getDate() - 2);
+  lista = lista.filter(e => parseDateTime(e) >= limite);
 
   // Filtro temporal
   if (filtroAtual === 'hoje') {
@@ -200,6 +180,7 @@ function criarCard(e) {
   card.className = 'evento-card';
   card.dataset.id = e.id;
 
+  const isLocal = eventosLocais.some(l => l.id === e.id);
   const mapsHtml = e.maps
     ? `<a href="${e.maps}" target="_blank" rel="noopener" title="Abrir no Google Maps">📍 ${escapeHtml(e.local)}</a>`
     : `<span>📍 ${escapeHtml(e.local)}</span>`;
@@ -221,16 +202,21 @@ function criarCard(e) {
       <div class="evento-tags">
         <span class="tag preco">${escapeHtml(e.preco || 'Gratuito')}</span>
         ${isHoje(e.data) ? '<span class="tag">Hoje</span>' : ''}
+        ${isLocal ? '<span class="tag local">Só no teu browser</span>' : ''}
       </div>
     </div>
     <div class="evento-actions">
-      <button class="btn-icon" data-action="edit" title="Editar">✏️</button>
-      <button class="btn-icon danger" data-action="delete" title="Apagar">🗑</button>
+      ${isLocal ? `
+        <button class="btn-icon" data-action="edit" title="Editar">✏️</button>
+        <button class="btn-icon danger" data-action="delete" title="Apagar">🗑</button>
+      ` : ''}
     </div>
   `;
 
-  card.querySelector('[data-action="edit"]').addEventListener('click', () => abrirModal(e));
-  card.querySelector('[data-action="delete"]').addEventListener('click', () => apagarEvento(e.id));
+  if (isLocal) {
+    card.querySelector('[data-action="edit"]')?.addEventListener('click', () => abrirModal(e));
+    card.querySelector('[data-action="delete"]')?.addEventListener('click', () => apagarEventoLocal(e.id));
+  }
 
   return card;
 }
@@ -247,7 +233,7 @@ function escapeHtml(str) {
 // Modal
 function abrirModal(evento = null) {
   editandoId = evento ? evento.id : null;
-  $modalTitle.textContent = evento ? 'Editar evento' : 'Novo evento';
+  $modalTitle.textContent = evento ? 'Editar evento (local)' : 'Novo evento (pré-visualização local)';
 
   $form.titulo.value = evento?.titulo || '';
   $form.data.value = evento?.data || getOffsetDate(0);
@@ -286,35 +272,35 @@ function guardarEvento(e) {
   };
 
   if (editandoId) {
-    const idx = eventos.findIndex(ev => ev.id === editandoId);
-    if (idx !== -1) eventos[idx] = dados;
+    const idx = eventosLocais.findIndex(ev => ev.id === editandoId);
+    if (idx !== -1) eventosLocais[idx] = dados;
   } else {
-    eventos.push(dados);
+    eventosLocais.push(dados);
   }
 
-  saveEventos();
+  saveEventosLocais();
   render();
   fecharModal();
-  showToast(editandoId ? 'Evento atualizado. Já estava na hora.' : 'Evento adicionado. Que o povo apareça!');
+  showToast('Evento guardado só no teu browser. Para partilhar com toda a gente, exporta o JSON e faz commit no GitHub.');
   scheduleLocalNotifications();
 }
 
-function apagarEvento(id) {
-  if (!confirm('Tens a certeza que queres apagar este evento? Não há volta a dar.')) return;
-  eventos = eventos.filter(e => e.id !== id);
-  saveEventos();
+function apagarEventoLocal(id) {
+  if (!confirm('Apagar este evento local? (Os oficiais não são afetados)')) return;
+  eventosLocais = eventosLocais.filter(e => e.id !== id);
+  saveEventosLocais();
   render();
-  showToast('Evento apagado. Adeus e obrigado pelos peixes.');
+  showToast('Evento local apagado.');
 }
 
 // Toast
 function showToast(msg) {
   $toast.textContent = msg;
   $toast.classList.add('show');
-  setTimeout(() => $toast.classList.remove('show'), 3200);
+  setTimeout(() => $toast.classList.remove('show'), 4200);
 }
 
-// Notificações locais (Android / browsers que suportem)
+// Notificações locais
 function checkNotifPermission() {
   if (!('Notification' in window)) {
     $btnNotif.style.display = 'none';
@@ -322,18 +308,17 @@ function checkNotifPermission() {
   }
   if (Notification.permission === 'granted') {
     $btnNotif.querySelector('.btn-text').textContent = 'Ativas';
-    $btnNotif.classList.add('active');
   }
 }
 
 async function pedirNotificacoes() {
   if (!('Notification' in window)) {
-    showToast('O teu browser não suporta notificações. Que pena.');
+    showToast('O teu browser não suporta notificações.');
     return;
   }
 
   if (Notification.permission === 'granted') {
-    showToast('Notificações já estão ativas. Relaxa.');
+    showToast('Notificações já estão ativas.');
     return;
   }
 
@@ -343,19 +328,17 @@ async function pedirNotificacoes() {
     showToast('Notificações ativadas! Vais ser avisado dos próximos eventos.');
     scheduleLocalNotifications();
   } else {
-    showToast('Permissão negada. Continuas no escuro.');
+    showToast('Permissão negada.');
   }
 }
 
 function scheduleLocalNotifications() {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
-  // Limpa timeouts anteriores (simples – em produção usarias uma queue)
-  // Para cada evento nas próximas 24h, agenda uma notificação 1h antes
   const agora = Date.now();
   const em24h = agora + 24 * 60 * 60 * 1000;
 
-  eventos.forEach(e => {
+  getTodosEventos().forEach(e => {
     const dt = parseDateTime(e).getTime();
     const aviso = dt - 60 * 60 * 1000; // 1 hora antes
 
@@ -365,34 +348,35 @@ function scheduleLocalNotifications() {
         new Notification('Evento a começar em breve', {
           body: `${e.titulo} · ${e.hora} · ${e.local}`,
           icon: 'icons/icon-192.png',
-          tag: e.id,
-          requireInteraction: false
+          tag: e.id
         });
       }, delay);
     }
   });
 }
 
-// Service Worker (PWA)
+// Service Worker
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
-      .then(() => console.log('SW registado – offline ready'))
+      .then(() => console.log('SW registado'))
       .catch(err => console.warn('SW falhou:', err));
   }
 }
 
-// Export JSON
+// Export JSON (para o dono do site fazer commit)
 function exportarJSON() {
-  const dataStr = JSON.stringify(eventos, null, 2);
+  // Junta oficiais + locais para facilitar o commit
+  const todos = getTodosEventos();
+  const dataStr = JSON.stringify(todos, null, 2);
   const blob = new Blob([dataStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'eventos-agenda.json';
+  a.download = 'eventos.json';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('JSON exportado. Agora é só fazer commit no GitHub.');
+  showToast('JSON exportado! Substitui o eventos.json no repositório e faz commit.');
 }
 
 // Event listeners
@@ -418,7 +402,6 @@ function bindEvents() {
     });
   });
 
-  // Fechar modal com Escape (já nativo no dialog, mas garantimos)
   $modal.addEventListener('cancel', fecharModal);
 }
 
