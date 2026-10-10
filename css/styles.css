@@ -84,6 +84,18 @@ body {
   gap: 1rem;
 }
 
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logo-icon {
+  font-size: 1.35rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
 .site-header h1 {
   font-family: var(--font-display);
   font-size: 1.25rem;
@@ -390,7 +402,6 @@ main {
   padding: 0;
   max-width: 520px;
   width: calc(100% - 2rem);
-  max-height: calc(100dvh - 2rem);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border);
   position: fixed;
@@ -398,6 +409,8 @@ main {
   left: 50%;
   transform: translate(-50%, -50%);
   margin: 0;
+  /* só limita altura em ecrãs muito baixos */
+  max-height: min(90dvh, 900px);
 }
 
 .modal::backdrop {
@@ -421,7 +434,8 @@ main {
 .modal-body {
   padding: 1.25rem;
   overflow-y: auto;
-  max-height: min(65dvh, 520px);
+  /* só faz scroll se realmente não couber */
+  max-height: min(70dvh, 640px);
 }
 
 .form-grid {
@@ -472,9 +486,9 @@ main {
 /* ========== TOAST ========== */
 .toast {
   position: fixed;
-  bottom: calc(1.25rem + var(--safe-bottom));
+  bottom: calc(1.5rem + var(--safe-bottom));
   left: 50%;
-  transform: translateX(-50%) translateY(140%);
+  transform: translateX(-50%) translateY(200%);
   background: var(--bg-elevated);
   color: var(--text);
   padding: 0.7rem 1.2rem;
@@ -487,9 +501,15 @@ main {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   max-width: 92vw;
   text-align: center;
+  pointer-events: none;
+  visibility: hidden;
 }
 
-.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+}
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 600px) {
@@ -516,7 +536,7 @@ main {
 
   .modal {
     width: calc(100% - 1.2rem);
-    max-height: calc(100dvh - 1.2rem);
+    max-height: 92dvh;
   }
 }
 
