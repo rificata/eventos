@@ -58,5 +58,89 @@
     "preco": "Gratuito",
     "descricao": "VENCEDORES DO 8º CONCURSO NACIONAL DE INTERPRETAÇÃO CONTEMPORÂNEA (CNIC 2026)",
     "organizador": ""
+  },
+  {
+    "id": "67d29513-d692-4ac3-bf01-18b06ffbbdc4",
+    "titulo": "Tangomanso & Otras Yerbas (Argentina, Ucrânia, Portugal, México)",
+    "data": "2026-11-20",
+    "hora": "21:30",
+    "local": "CatedralIdanha-a-Velha",
+    "maps": "https://maps.app.goo.gl/XPyS1Nj1fncyQ4zv9",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "",
+    "organizador": "FORA DO LUGAR 15 2026"
+  },
+  {
+    "id": "8b8d3007-058c-40e2-a5e7-54f067803701",
+    "titulo": "Noa Noa (Portugal)",
+    "data": "2026-11-21",
+    "hora": "21:30",
+    "local": "Associação de festas de MonfortinhoMonfortinho",
+    "maps": "https://maps.app.goo.gl/crfv9vnZWTDNVSDHA",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "",
+    "organizador": "FORA DO LUGAR 15 2026"
+  },
+  {
+    "id": "2155d4e2-bd09-4589-9f10-92178d0a9f7e",
+    "titulo": "Serendipia (Espanha)",
+    "data": "2026-11-28",
+    "hora": "21:30",
+    "local": "Lagar de Azeite da ZebreiraZebreira",
+    "maps": "https://maps.app.goo.gl/rgYSP7oqfaUb62U98",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "",
+    "organizador": "FORA DO LUGAR 15 2026"
+  },
+  {
+    "id": "14359065-302f-49f5-9cb6-1d54f140374c",
+    "titulo": "Orçun Atilla & Jordi Torrents (Turquia, Espanha)",
+    "data": "2026-12-04",
+    "hora": "21:30",
+    "local": "Capela de Nossa Senhora da AzenhaSenhora da Azenha",
+    "maps": "https://maps.app.goo.gl/UkY15BYM5dRQhcUM9",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "",
+    "organizador": "FORA DO LUGAR 15 2026"
+  },
+  {
+    "id": "9f3c0e49-f92b-4775-ae0b-acd2eb8258f3",
+    "titulo": "Concerto 1700 (Espanha)",
+    "data": "2026-12-05",
+    "hora": "21:30",
+    "local": "Concerto 1700 (Espanha)",
+    "maps": "https://maps.app.goo.gl/b3xuVKAZezG9xMHL8",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "",
+    "organizador": "FORA DO LUGAR 15 2026"
+  },
+  {
+    "id": "5f475d57-d2c0-4bb7-b896-fbd6074bc435",
+    "titulo": "Concerto à meia-luz: Zuca-Truca (Portugal)",
+    "data": "2026-11-21",
+    "hora": "16:30",
+    "local": "Recinto de FeirasIdanha-a-Nova",
+    "maps": "https://maps.app.goo.gl/BrosrjSBuGXtqYzN8",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "",
+    "organizador": "FORA DO LUGAR 15 2026"
+  },
+  {
+    "id": "5b3cdf07-26ff-4eac-87f2-ecbe5dafe02d",
+    "titulo": "Galandum Galundaina (Portugal) | Noite Cheia 3/5",
+    "data": "2026-11-27",
+    "hora": "20:03",
+    "local": "Centro Cultural RaianoIdanha-a-Nova",
+    "maps": "https://maps.app.goo.gl/PmkLA3TcsaBfvSGt9",
+    "categoria": "Música",
+    "preco": "Gratuito",
+    "descricao": "",
+    "organizador": "FORA DO LUGAR 15 2026"
   }
 ]
